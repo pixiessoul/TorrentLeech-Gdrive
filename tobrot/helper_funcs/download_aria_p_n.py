@@ -31,27 +31,23 @@ from tobrot.helper_funcs.download import download_tg
 
 
 async def aria_start():
-    aria2_daemon_start_cmd = []
-    # start the daemon, aria2c command
-    aria2_daemon_start_cmd.append("aria2c")
-    aria2_daemon_start_cmd.append("--allow-overwrite=true")
-    aria2_daemon_start_cmd.append("--daemon=true")
-    # aria2_daemon_start_cmd.append(f"--dir={DOWNLOAD_LOCATION}")
-    # TODO: this does not work, need to investigate this.
-    # but for now, https://t.me/TrollVoiceBot?start=858
-    aria2_daemon_start_cmd.append("--enable-rpc")
-    aria2_daemon_start_cmd.append("--follow-torrent=mem")
-    aria2_daemon_start_cmd.append("--max-connection-per-server=10")
-    aria2_daemon_start_cmd.append("--min-split-size=10M")
-    aria2_daemon_start_cmd.append("--rpc-listen-all=false")
-    aria2_daemon_start_cmd.append(f"--rpc-listen-port={ARIA_TWO_STARTED_PORT}")
-    aria2_daemon_start_cmd.append("--rpc-max-request-size=1024M")
-    aria2_daemon_start_cmd.append("--seed-time=0")
-    aria2_daemon_start_cmd.append("--max-overall-upload-limit=1K")
-    aria2_daemon_start_cmd.append("--split=10")
-    aria2_daemon_start_cmd.append(
-        f"--bt-stop-timeout={MAX_TIME_TO_WAIT_FOR_TORRENTS_TO_START}"
-    )
+    aria2_daemon_start_cmd = [
+        'aria2c',
+        '--allow-overwrite=true',
+        '--daemon=true',
+        '--enable-rpc',
+        '--follow-torrent=mem',
+        '--max-connection-per-server=10',
+        '--min-split-size=10M',
+        '--rpc-listen-all=false',
+        f"--rpc-listen-port={ARIA_TWO_STARTED_PORT}",
+        '--rpc-max-request-size=1024M',
+        '--seed-time=0',
+        '--max-overall-upload-limit=1K',
+        '--split=10',
+        f"--bt-stop-timeout={MAX_TIME_TO_WAIT_FOR_TORRENTS_TO_START}",
+    ]
+
     #
     LOGGER.info(aria2_daemon_start_cmd)
     #
@@ -61,11 +57,10 @@ async def aria_start():
         stderr=asyncio.subprocess.PIPE,
     )
     stdout, stderr = await process.communicate()
-    aria2 = aria2p.API(
+    return aria2p.API(
         aria2p.Client(host="http://localhost",
                       port=ARIA_TWO_STARTED_PORT, secret="")
     )
-    return aria2
 
 
 def add_magnet(aria_instance, magnetic_link, c_file_name):
@@ -204,20 +199,19 @@ async def call_apropriate_function(
                 f"Can't extract {os.path.basename(to_upload_file)}, Uploading the same file"
             )
 
-    if to_upload_file:
-        if CUSTOM_FILE_NAME:
-            if os.path.isfile(to_upload_file):
-                os.rename(to_upload_file,
-                          f"{CUSTOM_FILE_NAME}{to_upload_file}")
-                to_upload_file = f"{CUSTOM_FILE_NAME}{to_upload_file}"
-            else:
-                for root, _, files in os.walk(to_upload_file):
-                    LOGGER.info(files)
-                    for org in files:
-                        p_name = f"{root}/{org}"
-                        n_name = f"{root}/{CUSTOM_FILE_NAME}{org}"
-                        os.rename(p_name, n_name)
-                to_upload_file = to_upload_file
+    if to_upload_file and CUSTOM_FILE_NAME:
+        if os.path.isfile(to_upload_file):
+            os.rename(to_upload_file,
+                      f"{CUSTOM_FILE_NAME}{to_upload_file}")
+            to_upload_file = f"{CUSTOM_FILE_NAME}{to_upload_file}"
+        else:
+            for root, _, files in os.walk(to_upload_file):
+                LOGGER.info(files)
+                for org in files:
+                    p_name = f"{root}/{org}"
+                    n_name = f"{root}/{CUSTOM_FILE_NAME}{org}"
+                    os.rename(p_name, n_name)
+            to_upload_file = to_upload_file
 
     if cstom_file_name:
         os.rename(to_upload_file, cstom_file_name)
@@ -325,13 +319,13 @@ async def check_progress_for_dl(aria2, gid, event, previous_message):
                 await event.edit(
                     f"Download cancelled :\n<code>{file.name} ({file.total_length_string()})</code>"
                 )
-                return
             else:
                 LOGGER.info(str(e))
                 await event.edit(
                     "<u>error</u> :\n<code>{}</code> \n\n#error".format(str(e))
                 )
-                return
+
+            return
 
 
 # https://github.com/jaskaranSM/UniBorg/blob/6d35cf452bce1204613929d4da7530058785b6b1/stdplugins/aria.py#L136-L164
